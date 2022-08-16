@@ -1,6 +1,6 @@
 {
   "private": true,
-  "author":"haoxiaoli <haoxiaoli@baidu.com>",
+  "author": "haoxiaoli <haoxiaoli@baidu.com>",
   "scripts": {
     "dev": "umi dev",
     "build": "umi build",
@@ -9,6 +9,8 @@
     "start": "npm run dev"
   },
   "dependencies": {
+    "antd": "^4.22.5",
+    "fabric": "^5.2.1",
     "umi": "^4.0.12"
   },
   "devDependencies": {

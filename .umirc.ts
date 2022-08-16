@@ -1,3 +1,8 @@
 export default {
-  npmClient: 'yarn'
+  npmClient: 'yarn',
+  routes: [
+    {
+      path: '/', component: 'index'
+    }
+  ]
 };
