@@ -20,6 +20,7 @@ export default function Home() {
     let activeLine = '';
     const drawWidth = 2; //笔触宽度
     const color = "#E34F51"; //画笔颜色
+    const moveCount = useRef(1);
 
     // 鼠标按下时触发
     const mouseDownHandle = (e) => {
@@ -55,8 +56,34 @@ export default function Home() {
         }
     };
     // 鼠标移动过程中已经完成了绘制
-    const mouseMoveHandle = () => {
-
+    const mouseMoveHandle = (e) => {
+        if (moveCount.current % 2 && !doDrawing) {
+            //减少绘制频率
+            return;
+        }
+        moveCount.current++;
+        let xy = e.pointer || transformMouse(e.e.offsetX, e.e.offsetY);
+        mouseTo.current.x = xy.x;
+        mouseTo.current.y = xy.y;
+        // 多边形与文字框特殊处理
+        if (drawType !== 'text' || drawType !== 'polygon') {
+            drawingHandle(e);
+        }
+        if (drawType === 'polygon') {
+            if (activeLine && activeLine.class === 'line') {
+                let pointer = canvas.getPointer(e.e);
+                activeLine.strike({x2: pointer.x, y2: pointer.y});
+                let points = activeShape.get('points');
+                points[pointArray.length] = {
+                    x: pointer.x,
+                    y: pointer.y,
+                    zIndex: 1
+                };
+                activeShape.set({points: points});
+                canvas.renderAll();
+            }
+            canvas.renderAll();
+        }
     };
     // 鼠标松开执行
     const mouseUpHandle = () => {
