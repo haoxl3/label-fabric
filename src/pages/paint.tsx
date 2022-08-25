@@ -126,8 +126,16 @@ export default function Paint() {
             }
         },
     };
-    const changeZoom = () => {
-
+    // 改变canvas尺寸
+    const changeZoom = (zoom) => {
+        let zom = zoom;
+        if (zom > 10) {
+            zom = 10;
+        } else if (zom < 0.01) {
+            zom = 0.01;
+        }
+        let scaleCenterPoint = new fabric.Point(canvasWidth / 2, cnavasHeight / 2);
+        canvasBox.zoomToPoint(scaleCenterPoint, zom);
     };
     const getBound = () => {
 
