@@ -126,6 +126,9 @@ export default function Paint() {
             }
         },
     };
+    const changeZoom = () => {
+
+    };
     const getBound = () => {
 
     };
@@ -316,6 +319,13 @@ export default function Paint() {
                 }
             }
             //标注模式下检查是否超出范围-end
+        });
+
+        canvasBox.on('mouse:wheel', (option) => {
+            option.e.preventDefault();
+            let delta = option.e.deltaY > 0 ? -0.01 : 0.01;
+            let zoom = canvasBox.getZoom() + delta;
+            changeZoom(zoom);
         });
     };
     // 序列化canvas
