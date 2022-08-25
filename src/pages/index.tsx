@@ -24,6 +24,7 @@ export default function Home() {
 
     // 鼠标按下时触发
     const mouseDownHandle = (e) => {
+        debugger
         let xy = e.pointer || transformMouse(e.e.offsetX, e.e.offsetY);
         mouseFrom.current.x = xy.x;
         mouseFrom.current.y = xy.y;
@@ -57,6 +58,7 @@ export default function Home() {
     };
     // 鼠标移动过程中已经完成了绘制
     const mouseMoveHandle = (e) => {
+        debugger
         if (moveCount.current % 2 && !doDrawing) {
             //减少绘制频率
             return;
@@ -86,8 +88,15 @@ export default function Home() {
         }
     };
     // 鼠标松开执行
-    const mouseUpHandle = () => {
-
+    const mouseUpHandle = (e) => {
+        let xy = e.pointer || transformMouse(e.e.offsetX, e.e.offsetY);
+        mouseTo.current.x = xy.x;
+        mouseTo.current.y = xy.y;
+        drawingObject.current = null;
+        moveCount.current = 1;
+        if (drawType !== 'polygon') {
+            setDoDrawing(false);
+        }
     };
     // 删除某个形状
     const deleteObjHandle = () => {
@@ -97,6 +106,7 @@ export default function Home() {
     };
     // 开始绘制时，指定绘画种类
     const drawTypeChange = e => {
+        debugger
         setDrawType(e);
         canvas.skipTargetFind = !!e;
         if (e === 'pen') {
