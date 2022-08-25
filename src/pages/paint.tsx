@@ -120,6 +120,18 @@ export default function Paint() {
             }
         },
     };
+    const drawTriangle = () => {
+
+    };
+    const drawCircle = () => {
+
+    };
+    const drawRect = () => {
+
+    };
+    const drawLine = () => {
+
+    };
     const drawText = () => {
 
     };
@@ -164,6 +176,48 @@ export default function Paint() {
             if (operationMode === 'move') {
                 isMoving = true;
                 pointCol.startPoint = option.pointer;
+            }
+        });
+
+        canvasBox.on('mouse:move', (option) => {
+            // 移动图片
+            if (operationMode === 'move' && isMoving) { // 移动图片
+                let point = {
+                  x: (option.pointer.x - pointCol.startPoint.x) / 5,
+                  y: (option.pointer.y - pointCol.startPoint.y) / 5,
+                };
+                canvasBox.relativePan(point);
+                pointCol.startPoint = option.pointer;
+            }
+            if (!isDrawing) return;
+            // 画笔绘制过程中判断是否超出图片范围
+            if (['line', 'freeDraw'].includes(operationMode) && moveInBound) {
+                if (pointIsInnerBound(option.pointer)) {
+                    moveInBound = true;
+                } else {
+                    moveInBound = false;
+                }
+            }
+            pointCol.endPoint = option.absolutePointer;
+            switch (operationMode) {
+                case 'line':
+                    drawLine();
+                    break;
+                case 'rect':
+                    drawRect();
+                    break;
+                case 'circle':
+                    drawCircle();
+                    break;
+                case 'triangle':
+                    drawTriangle();
+                    break;
+                case 'polygon':
+                    // drawPolygon();
+                    // 以线段构成多边形，每次点击生成一个拐点
+                    drawLine();
+                    break;
+                default:
             }
         });
     };
