@@ -27,6 +27,12 @@ export default function Paint() {
         endPoint: {},
     };
     let isMoving = false; // 标志move模式下是否正在移动
+    let drawingObj; // 正在画的对象
+    let polLineArray = []; // 存放多边形临时线段
+    // 这些操作模式下，每次鼠标抬起需要序列化
+    const needSerialization = ['freeDraw', 'line', 'rect', 'circle', 'triangle'];
+    // 超出范围需要提示的操作模式
+    const needAlert = ['freeDraw', 'line', 'rect', 'circle', 'triangle', 'polygon', 'text'];
     const drawList = [
         {
             name: 'freeDraw',
@@ -119,6 +125,15 @@ export default function Paint() {
                 // message.error(`${info.file.name} file upload failed.`);
             }
         },
+    };
+    const getBound = () => {
+
+    };
+    const drawPolygon = () => {
+
+    };
+    const pointColSetNull = () => {
+
     };
     const drawTriangle = () => {
 
@@ -219,6 +234,88 @@ export default function Paint() {
                     break;
                 default:
             }
+        });
+
+        canvasBox.on('mouse:up', (option) => {
+            isDrawing = false;
+            pointCol.endPoint = option.absolutePointer;
+            drawingObj = null;
+            pointColSetNull();
+
+            // 自由绘画模式中，每次落笔绘画对象不可选中
+            if (operationMode === 'freeDraw') {
+                canvasBox.getObjects()[canvasBox.getObjects().length - 1].selectable = false;
+            }
+            if (needSerialization.includes(operationMode)) serializationCanvas();
+
+            if (operationMode === 'polygon') {
+                polPointArray.push(option.absolutePointer);
+                pointCol.startPoint = option.absolutePointer;
+                isDrawing = true;
+                const bounding = polStartCircle.getBoundingRect();
+                if (polPointArray.slice(-1)[0].x >= bounding.left && polPointArray.slice(-1)[0].x <= bounding.left + bounding.width && polPointArray.slice(-1)[0].y >= bounding.top && polPointArray.slice(-1)[0].y <= bounding.top + bounding.height) {
+                    if (polLineArray.length <= 1) { // 如果第一个鼠标落下点在原点，则不进行绘制
+                        isDrawing = false;
+                        canvasBox.remove(polStartCircle);
+                        polStartCircle = null;
+                        drawingObj = null;
+                        polPointArray = [];
+                        polLineArray = [];
+                        return;
+                    }
+                    polPointArray.splice(-1, 1);
+                    [pointCol.endPoint] = polPointArray;
+                    [pointCol.startPoint] = polPointArray.slice(-1);
+                    isDrawing = false;
+                    canvasBox.remove(polStartCircle);
+                    polStartCircle = null;
+                    if (SFMode) {
+                        polLineArray.forEach((item) => {
+                            canvasBox.remove(item);
+                        });
+                        drawPolygon();
+                    } else {
+                        canvasBox.remove(polLineArray.slice(-1)[0]);
+                        drawLine();
+                    }
+                    drawingObj = null;
+                    polPointArray = [];
+                    polLineArray = [];
+
+                    serializationCanvas();
+                }
+            }
+
+            if (operationMode === 'move') {
+                isMoving = false;
+                pointCol.startPoint = {};
+            }
+
+            //标注模式下检查是否超出范围-start
+            if (['rect', 'circle', 'triangle', 'polygon'].includes(operationMode)) { // 结束后需要检查的类型
+                let obj = canvasBox.getObjects()[canvasBox.getObjects().length - 1];
+                let { aCoords } = obj;
+                let bound = getBound();
+                endInBound = aCoords.tl.y >= bound.top && aCoords.br.y <= bound.bottom && aCoords.tl.x >= bound.left && aCoords.br.x <= bound.right;
+            }
+            if (!moveInBound || !startInBound || !endInBound) {
+                // 绘制的标注超出图形范围
+                if (needAlert.includes(operationMode)) {
+                    message.error('请勿超出标注范围！');
+                    // 删除刚刚绘制的不合格标注
+                    canvasBox.remove(canvasBox.getObjects()[canvasBox.getObjects().length - 1]);
+                    if (polStartCircle) canvasBox.remove(polStartCircle);
+                    isDrawing = false;
+                    polStartCircle = null;
+                    drawingObj = null;
+                    polPointArray = [];
+                    polLineArray = [];
+                    moveInBound = true;
+                    startInBound = true;
+                    endInBound = true;
+                }
+            }
+            //标注模式下检查是否超出范围-end
         });
     };
     // 序列化canvas
