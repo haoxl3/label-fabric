@@ -35,6 +35,8 @@ export default function Paint() {
     let polLineArray = []; // 存放多边形临时线段
     let imgList = useState([]);
     let currentImg = useRef(imgList[0]);
+    let saveList = []; // 点击save保存的canvas列表，每次点击保存都会记录一次
+    let selectedImgIndex = 0; // 被选择的图片序号
     // 这些操作模式下，每次鼠标抬起需要序列化
     const needSerialization = ['freeDraw', 'line', 'rect', 'circle', 'triangle'];
     // 超出范围需要提示的操作模式
@@ -145,10 +147,45 @@ export default function Paint() {
         goBackTag === -1 ? deserializationCanvas(canvasList.slice(goBackTag)[0]) : deserializationCanvas(canvasList.slice(goBackTag, goBackTag + 1)[0]);
     };
     const save = () => {
-
+        // 点击保存，保存该文本框，销毁文本框对象
+        if (operationMode === 'text') {
+            initTextbox();
+            serializationCanvas();
+        }
+        saveList.push(goBackTag === -1 ? canvasList.slice(goBackTag)[0] : canvasList.slice(goBackTag, goBackTag + 1)[0]);
+        canvasList = [...saveList];
+        imgList.forEach((item, index) => {
+            if (index === selectedImgIndex) {
+                item.list = [...saveList];
+            }
+        });
+        goBackTag = -1;
+    };
+    // 将base64转为blob
+    const dataURLtoBlob = (dataurl) => {
+        let arr = dataurl.split(','); // 把base64分成两部门，头（包含源文件类型信息），ASCII 字符串（文件数据）部分
+        let mime = arr[0].match(/:(.*?);/)[1]; // 获取文件类型
+        let bstr = atob(arr[1]); // 通过base-64编码的字符串数据，获取二进制数据“字符串”
+        let n = bstr.length; // 获取字符串长度
+        let u8arr = new Uint8Array(n); // 获取二进制编码数组
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n); // 获取制定位置字符串的unicode编码
+        }
+        return new Blob([u8arr], { type: mime });
     };
     const download = () => {
+        let url = canvasBox.toDataURL();
+        let blob = dataURLtoBlob(url);
 
+        blob.lastModifiedDate = new Date();
+        blob.name = 'canvas.png';
+        let eElem = document.createElement('a');
+        eElem.download = 'canvas.png';
+        eElem.style.display = 'none';
+        eElem.href = URL.createObjectURL(blob);
+        document.body.appendChild(eElem);
+        eElem.click();
+        document.body.removeChild(eElem);
     };
     const operation = (ctl) => {
         widthChanged = false;
