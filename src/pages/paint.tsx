@@ -26,9 +26,13 @@ export default function Paint() {
         startPoint: {},
         endPoint: {},
     };
+    let textBox = null; // 文本框
+    let widthChanged = false; // width是否改变
     let isMoving = false; // 标志move模式下是否正在移动
     let drawingObj; // 正在画的对象
     let polLineArray = []; // 存放多边形临时线段
+    let imgList = useState([]);
+    let currentImg = useRef(imgList[0]);
     // 这些操作模式下，每次鼠标抬起需要序列化
     const needSerialization = ['freeDraw', 'line', 'rect', 'circle', 'triangle'];
     // 超出范围需要提示的操作模式
@@ -101,8 +105,82 @@ export default function Paint() {
             desc: '下载'
         }
     ];
-    const operation = () => {
+    // 重置文本框
+    const initTextbox = () => {
+        if (textBox !== null) {
+            textBox.editable = false;
+            textBox.exitEditing();
+            textBox = null;
+        }
+    };
+    const toSmall = () => {
 
+    };
+    const toLarge = () => {
+
+    };
+    const goBack = () => {
+
+    };
+    const goForward = () => {
+
+    };
+    const save = () => {
+
+    };
+    const download = () => {
+
+    };
+    const operation = (ctl) => {
+        widthChanged = false;
+        // 在改变操作模式前判断操作模式如果为text，序列化文本框
+        if (ctl.name === 'text') serializationCanvas();
+        // select模式可以让所有对象可选,这里的operationMode在代表上一次操作模式
+        if (ctl.name === 'select' || operationMode === 'select') {
+            let allObj = canvasBox.getObjects();
+            if (ctl.name === 'select') {
+                allObj.forEach((item) => {
+                    item.selectable = true;
+                });
+            } else {
+                allObj.forEach((item) => {
+                    item.selectable = false;
+                });
+            }
+        }
+        // 改变操作模式
+        if (!['toSmall', 'toLarge', 'goBack', 'goForward', 'save', 'download'].includes(ctl.name)) operationMode = ctl.name;
+        if (operationMode === 'freeDraw') {
+            canvasBox.isDrawingMode = true;
+            canvasBox.freeDrawingBrush.color = penColor;
+            canvasBox.freeDrawingBrush.width = penWidth;
+        } else {
+            canvasBox.isDrawingMode = false;
+        }
+
+        initTextbox();
+
+        switch (ctl.name) {
+            case 'toSmall':
+                toSmall();
+                break;
+            case 'toLarge':
+                toLarge();
+                break;
+            case 'goBack':
+                goBack();
+                break;
+            case 'goForward':
+                goForward();
+                break;
+            case 'save':
+                save();
+                break;
+            case 'download':
+                download();
+                break;
+            default:
+        }
     };
     const SFModeHandle = (e: RadioChangeEvent) => {
         setSFMode(e.target.value);
@@ -126,6 +204,20 @@ export default function Paint() {
             }
         },
     };
+    // 连续绘制过程canvas添加对象
+    const addObj = (canvas, obj) => {
+        // 画直线是每次移动画一条线，如果正在画直线，删除上一次画的对象，只保留当前直线
+        if (drawingObj) {
+            canvasBox.remove(drawingObj);
+        }
+        drawingObj = obj;
+        canvas.add(obj);
+    };
+    // 获取图片
+    const getImg = () => {
+        let objList = canvasBox.getObjects();
+        return objList.filter((item) => Object.getPrototypeOf(item).type === 'image')[0];
+    };
     // 改变canvas尺寸
     const changeZoom = (zoom) => {
         let zom = zoom;
@@ -137,20 +229,64 @@ export default function Paint() {
         let scaleCenterPoint = new fabric.Point(canvasWidth / 2, cnavasHeight / 2);
         canvasBox.zoomToPoint(scaleCenterPoint, zom);
     };
+    // 获取边界
     const getBound = () => {
-
+        if (currentImg.current.length) {
+            let img = getImg();
+            let imgLeft = img.getBoundingRect().left;
+            let imgTop = img.getBoundingRect().top;
+            let imgRight = imgLeft + img.getBoundingRect().width;
+            let imgBottom = imgTop + img.getBoundingRect().height;
+            return {
+                left: imgLeft, top: imgTop, right: imgRight, bottom: imgBottom,
+            };
+        }
+        return { // 图片不存在则以canvas为边界
+            left: 0, top: 0, right: canvasBox.width, bottom: canvasBox.height,
+        };
     };
     const drawPolygon = () => {
-
+        const polygon = new fabric.Polygon([...polPointArray], {
+            fill: SFMode ? penColor : 'rgba(0, 0, 0, 0)',
+            stroke: penColor,
+            strokeWidth: penWidth,
+            selectable: false,
+        });
+        canvasBox.add(polygon);
     };
+    // 置空pointCol
     const pointColSetNull = () => {
-
+        pointCol.startPoint = {};
+        pointCol.endPoint = {};
     };
     const drawTriangle = () => {
-
+        let XPositive = pointCol.endPoint.x - pointCol.startPoint.x > 0; // 判定鼠标移动方向
+        let YPositive = pointCol.endPoint.y - pointCol.startPoint.y > 0; // 判定鼠标移动方向
+        const triangle = new fabric.Triangle({
+            left: XPositive ? pointCol.startPoint.x : pointCol.endPoint.x,
+            top: YPositive ? pointCol.startPoint.y : pointCol.endPoint.y,
+            fill: SFMode ? penColor : 'rgba(0, 0, 0, 0)',
+            stroke: penColor,
+            strokeWidth: penWidth,
+            height: Math.abs(pointCol.endPoint.y - pointCol.startPoint.y),
+            width: (Math.sqrt(3) * 2 * Math.abs(pointCol.endPoint.y - pointCol.startPoint.y)) / 3,
+            selectable: false,
+        });
+        addObj(canvasBox, triangle);
     };
     const drawCircle = () => {
-
+        let XPositive = pointCol.endPoint.x - pointCol.startPoint.x > 0; // 判定鼠标移动方向
+        let YPositive = pointCol.endPoint.y - pointCol.startPoint.y > 0; // 判定鼠标移动方向
+        const circle = new fabric.Circle({
+            left: XPositive ? pointCol.startPoint.x : pointCol.endPoint.x,
+            top: YPositive ? pointCol.startPoint.y : pointCol.endPoint.y,
+            fill: SFMode ? penColor : 'rgba(0, 0, 0, 0)',
+            stroke: penColor,
+            strokeWidth: penWidth,
+            radius: Math.abs(pointCol.endPoint.x - pointCol.startPoint.x) / 2,
+            selectable: false,
+        });
+        addObj(canvasBox, circle);
     };
     const drawRect = () => {
 
