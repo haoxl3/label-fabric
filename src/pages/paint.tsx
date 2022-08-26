@@ -106,7 +106,11 @@ export default function Paint() {
         },
         {
             name: 'download',
-            desc: '下载'
+            desc: '下载图片'
+        },
+        {
+            name: 'toJson',
+            desc: '下载json'
         }
     ];
     // 重置文本框
@@ -160,6 +164,10 @@ export default function Paint() {
             }
         });
         goBackTag = -1;
+    };
+    const toJson = () => {
+        const json = canvasBox.toJSON();
+        console.log(json);
     };
     // 将base64转为blob
     const dataURLtoBlob = (dataurl) => {
@@ -234,6 +242,9 @@ export default function Paint() {
                 break;
             case 'download':
                 download();
+                break;
+            case 'toJson':
+                toJson();
                 break;
             default:
         }
@@ -352,7 +363,7 @@ export default function Paint() {
             top: YPositive ? pointCol.startPoint.y : pointCol.endPoint.y,
             width: Math.abs(pointCol.endPoint.x - pointCol.startPoint.x),
             height: Math.abs(pointCol.endPoint.y - pointCol.startPoint.y),
-            fill: SFMode ? penColor : 'rgba(0, 0, 0, 0)',
+            fill: SFMode ? penColor : 'rgba(0, 0, 0, 0.3)',
             stroke: penColor,
             strokeWidth: penWidth,
             selectable: false,
@@ -592,6 +603,51 @@ export default function Paint() {
             width: canvasWidth,
             height: cnavasHeight,
             selection: false,
+        });
+        let json = {
+            "version": "5.2.1",
+            "objects": [
+                {
+                    "type": "rect",
+                    "version": "5.2.1",
+                    "originX": "left",
+                    "originY": "top",
+                    "left": 347,
+                    "top": 209,
+                    "width": 83,
+                    "height": 89,
+                    "fill": "rgba(0, 0, 0, 0.3)",
+                    "stroke": "#f00",
+                    "strokeWidth": 3,
+                    "strokeDashArray": null,
+                    "strokeLineCap": "butt",
+                    "strokeDashOffset": 0,
+                    "strokeLineJoin": "miter",
+                    "strokeUniform": false,
+                    "strokeMiterLimit": 4,
+                    "scaleX": 1,
+                    "scaleY": 1,
+                    "angle": 0,
+                    "flipX": false,
+                    "flipY": false,
+                    "opacity": 1,
+                    "shadow": null,
+                    "visible": true,
+                    "backgroundColor": "",
+                    "fillRule": "nonzero",
+                    "paintFirst": "fill",
+                    "globalCompositeOperation": "source-over",
+                    "skewX": 0,
+                    "skewY": 0,
+                    "rx": 0,
+                    "ry": 0
+                }
+            ],
+            "background": "#EBF5FF"
+        };
+        // 预渲染之前标注好的图形
+        canvasBox.loadFromJSON(json, () => {
+            canvasBox.renderAll();
         });
     };
     useEffect(() => {
