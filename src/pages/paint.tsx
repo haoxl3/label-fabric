@@ -297,8 +297,18 @@ export default function Paint() {
     const drawText = () => {
 
     };
-    const pointIsInnerBound = () => {
-
+    // 判断某点是否在范围内point:{x,y}  相对于canvas的点
+    const pointIsInnerBound = (point) => {
+        let bound = getBound();
+        if (
+            point.x < bound.left
+            || point.x > bound.right
+            || point.y < bound.top
+            || point.y > bound.bottom
+        ) {
+            return false;
+        }
+        return true;
     };
     const canvasAddEvent = () => {
         canvasBox.on('mouse:down', (option) => {
