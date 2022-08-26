@@ -289,7 +289,19 @@ export default function Paint() {
         addObj(canvasBox, circle);
     };
     const drawRect = () => {
-
+        let XPositive = pointCol.endPoint.x - pointCol.startPoint.x > 0; // 判定鼠标移动方向
+        let YPositive = pointCol.endPoint.y - pointCol.startPoint.y > 0; // 判定鼠标移动方向
+        const rect = new fabric.Rect({
+            left: XPositive ? pointCol.startPoint.x : pointCol.endPoint.x,
+            top: YPositive ? pointCol.startPoint.y : pointCol.endPoint.y,
+            width: Math.abs(pointCol.endPoint.x - pointCol.startPoint.x),
+            height: Math.abs(pointCol.endPoint.y - pointCol.startPoint.y),
+            fill: SFMode ? penColor : 'rgba(0, 0, 0, 0)',
+            stroke: penColor,
+            strokeWidth: penWidth,
+            selectable: false,
+        });
+        addObj(canvasBox, rect);
     };
     const drawLine = () => {
 
