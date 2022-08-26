@@ -304,7 +304,15 @@ export default function Paint() {
         addObj(canvasBox, rect);
     };
     const drawLine = () => {
-
+        const line = new fabric.Line([pointCol.startPoint.x, pointCol.startPoint.y, pointCol.endPoint.x, pointCol.endPoint.y], {
+            stroke: penColor,
+            strokeWidth: penWidth,
+            selectable: false,
+        });
+        if (operationMode === 'polygon') {
+            polLineArray.push(line); // 保存多边形的临时线段
+        }
+        addObj(canvasBox, line);
     };
     const drawText = () => {
 
