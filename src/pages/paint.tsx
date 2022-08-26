@@ -78,12 +78,12 @@ export default function Paint() {
         },
         {
             name: 'eraser',
-            desc: '擦除'
+            desc: '删除'
         },
-        {
-            name: 'move',
-            desc: '移动'
-        },
+        // {
+        //     name: 'move',
+        //     desc: '移动'
+        // },
         {
             name: 'toSmall',
             desc: '缩小'
@@ -111,11 +111,11 @@ export default function Paint() {
     ];
     // 重置文本框
     const initTextbox = () => {
-        if (textBox !== null) {
-            textBox.editable = false;
-            textBox.exitEditing();
-            textBox = null;
-        }
+        // if (textBox !== null) {
+        //     textBox.editable = false;
+        //     textBox.exitEditing();
+        //     textBox = null;
+        // }
     };
     const toSmall = () => {
         let zoom = canvasBox.getZoom() - 0.05;
@@ -430,22 +430,22 @@ export default function Paint() {
                 });
             }
 
-            if (operationMode === 'move') {
-                isMoving = true;
-                pointCol.startPoint = option.pointer;
-            }
+            // if (operationMode === 'move') {
+            //     isMoving = true;
+            //     pointCol.startPoint = option.pointer;
+            // }
         });
 
         canvasBox.on('mouse:move', (option) => {
             // 移动图片
-            if (operationMode === 'move' && isMoving) { // 移动图片
-                let point = {
-                  x: (option.pointer.x - pointCol.startPoint.x) / 5,
-                  y: (option.pointer.y - pointCol.startPoint.y) / 5,
-                };
-                canvasBox.relativePan(point);
-                pointCol.startPoint = option.pointer;
-            }
+            // if (operationMode === 'move' && isMoving) { // 移动图片
+            //     let point = {
+            //       x: (option.pointer.x - pointCol.startPoint.x) / 5,
+            //       y: (option.pointer.y - pointCol.startPoint.y) / 5,
+            //     };
+            //     canvasBox.relativePan(point);
+            //     pointCol.startPoint = option.pointer;
+            // }
             if (!isDrawing) return;
             // 画笔绘制过程中判断是否超出图片范围
             if (['line', 'freeDraw'].includes(operationMode) && moveInBound) {
@@ -528,10 +528,10 @@ export default function Paint() {
                 }
             }
 
-            if (operationMode === 'move') {
-                isMoving = false;
-                pointCol.startPoint = {};
-            }
+            // if (operationMode === 'move') {
+            //     isMoving = false;
+            //     pointCol.startPoint = {};
+            // }
 
             //标注模式下检查是否超出范围-start
             if (['rect', 'circle', 'triangle', 'polygon'].includes(operationMode)) { // 结束后需要检查的类型
