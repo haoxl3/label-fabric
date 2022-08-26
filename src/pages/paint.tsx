@@ -30,6 +30,8 @@ export default function Paint() {
     let widthChanged = false; // width是否改变
     let isMoving = false; // 标志move模式下是否正在移动
     let drawingObj; // 正在画的对象
+    const fontSize = 14; // 字体大小
+    let goBackTag = -1; // 记录前进回撤
     let polLineArray = []; // 存放多边形临时线段
     let imgList = useState([]);
     let currentImg = useRef(imgList[0]);
@@ -114,16 +116,33 @@ export default function Paint() {
         }
     };
     const toSmall = () => {
-
+        let zoom = canvasBox.getZoom() - 0.05;
+        changeZoom(zoom);
     };
     const toLarge = () => {
-
+        let zoom = canvasBox.getZoom() + 0.05;
+        changeZoom(zoom);
     };
+    // 回退
     const goBack = () => {
+        // 标注模式下，回撤到图片初始状态时提示
+        if (-(goBackTag - 1) === canvasList.length) {
+            message.warning('已经是第一个记录！');
+            return;
+        }
+        goBackTag--;
 
+        deserializationCanvas(canvasList.slice(goBackTag, goBackTag + 1)[0]);
     };
+    // 前进
     const goForward = () => {
+        if (goBackTag === -1) {
+            message.warning('已经是最后一个记录！');
+            return;
+        }
+        goBackTag++;
 
+        goBackTag === -1 ? deserializationCanvas(canvasList.slice(goBackTag)[0]) : deserializationCanvas(canvasList.slice(goBackTag, goBackTag + 1)[0]);
     };
     const save = () => {
 
@@ -315,7 +334,16 @@ export default function Paint() {
         addObj(canvasBox, line);
     };
     const drawText = () => {
-
+        textBox = new fabric.Textbox('', {
+            left: pointCol.startPoint.x,
+            top: pointCol.startPoint.y,
+            fontSize,
+            stroke: penColor,
+            strokeWidth: penWidth,
+            selectable: false,
+        });
+        canvasBox.add(textBox);
+        textBox.enterEditing();
     };
     // 判断某点是否在范围内point:{x,y}  相对于canvas的点
     const pointIsInnerBound = (point) => {
@@ -506,6 +534,20 @@ export default function Paint() {
     const serializationCanvas = () => {
         canvasList.push(JSON.stringify(canvasBox.toJSON()));
     };
+    // 反序列化canvas
+    const deserializationCanvas = (json) => {
+        canvasBox.loadFromJSON(
+            JSON.parse(json),
+            canvasBox.renderAll.bind(canvasBox),
+            (o, object) => {
+                object.selectable = false;
+                // 如果是图片
+                if (Object.getPrototypeOf(object).type === 'image') {
+                    object.scaleToWidth(750).set({ left: 0, top: 0 });
+                }
+            },
+        );
+    }
     // 初始化canvas
     const initCanvas = () => {
         canvasBox = new fabric.Canvas('canvas', {
