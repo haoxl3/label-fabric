@@ -3,14 +3,17 @@ import { fabric } from 'fabric';
 import { Button, Space, Radio, Row, Col, InputNumber, Upload, message } from 'antd';
 import type { RadioChangeEvent, UploadProps } from 'antd';
 import 'antd/dist/antd.css';
+import styles from './style.less';
 
 export default function Paint() {
     const canvasEl = useRef(null);
     const [SFMode, setSFMode] = useState(0);
     const [penWidth, setPenWidth] = useState(3);
     const [penColor, setPenColor] = useState('#f00'); // 画笔颜色
+    const [menuPosition, setMenuPosition] = useState({visibility: 'hidden', left: 0, top: 0, zIndex: -100});
     const isHidden = useRef(true); // 显示隐藏所画的图形
-    let canvasBox;
+    const activeEl = useRef({});
+    const canvasBox = useRef({});
     const backgroundColor = '#EBF5FF'; // 画布的背景颜色
     const canvasWidth = 980;
     const cnavasHeight = 530;
@@ -127,11 +130,11 @@ export default function Paint() {
         // }
     };
     const toSmall = () => {
-        let zoom = canvasBox.getZoom() - 0.05;
+        let zoom = canvasBox.current.getZoom() - 0.05;
         changeZoom(zoom);
     };
     const toLarge = () => {
-        let zoom = canvasBox.getZoom() + 0.05;
+        let zoom = canvasBox.current.getZoom() + 0.05;
         changeZoom(zoom);
     };
     // 回退
@@ -171,17 +174,17 @@ export default function Paint() {
         goBackTag = -1;
     };
     const toJson = () => {
-        const json = canvasBox.toJSON();
+        const json = canvasBox.current.toJSON();
         console.log(json);
     };
     const toggleShow = () => {
         isHidden.current = !isHidden.current;
-        const objs = canvasBox.toJSON();
+        const objs = canvasBox.current.toJSON();
         objs.objects.map(item => {
             item.visible = isHidden.current;
         });
-        canvasBox.loadFromJSON(objs, () => {
-            canvasBox.renderAll();
+        canvasBox.current.loadFromJSON(objs, () => {
+            canvasBox.current.renderAll();
         });
     };
     // 将base64转为blob
@@ -197,7 +200,7 @@ export default function Paint() {
         return new Blob([u8arr], { type: mime });
     };
     const download = () => {
-        let url = canvasBox.toDataURL();
+        let url = canvasBox.current.toDataURL();
         let blob = dataURLtoBlob(url);
 
         blob.lastModifiedDate = new Date();
@@ -216,7 +219,7 @@ export default function Paint() {
         if (ctl.name === 'text') serializationCanvas();
         // select模式可以让所有对象可选,这里的operationMode在代表上一次操作模式
         if (ctl.name === 'select' || operationMode === 'select') {
-            let allObj = canvasBox.getObjects();
+            let allObj = canvasBox.current.getObjects();
             if (ctl.name === 'select') {
                 allObj.forEach((item) => {
                     item.selectable = true;
@@ -230,11 +233,11 @@ export default function Paint() {
         // 改变操作模式
         if (!['toSmall', 'toLarge', 'goBack', 'goForward', 'save', 'download'].includes(ctl.name)) operationMode = ctl.name;
         if (operationMode === 'freeDraw') {
-            canvasBox.isDrawingMode = true;
-            canvasBox.freeDrawingBrush.color = penColor;
-            canvasBox.freeDrawingBrush.width = penWidth;
+            canvasBox.current.isDrawingMode = true;
+            canvasBox.current.freeDrawingBrush.color = penColor;
+            canvasBox.current.freeDrawingBrush.width = penWidth;
         } else {
-            canvasBox.isDrawingMode = false;
+            canvasBox.current.isDrawingMode = false;
         }
 
         initTextbox();
@@ -293,14 +296,14 @@ export default function Paint() {
     const addObj = (canvas, obj) => {
         // 画直线是每次移动画一条线，如果正在画直线，删除上一次画的对象，只保留当前直线
         if (drawingObj) {
-            canvasBox.remove(drawingObj);
+            canvasBox.current.remove(drawingObj);
         }
         drawingObj = obj;
         canvas.add(obj);
     };
     // 获取图片
     const getImg = () => {
-        let objList = canvasBox.getObjects();
+        let objList = canvasBox.current.getObjects();
         return objList.filter((item) => Object.getPrototypeOf(item).type === 'image')[0];
     };
     // 改变canvas尺寸
@@ -312,7 +315,7 @@ export default function Paint() {
             zom = 0.01;
         }
         let scaleCenterPoint = new fabric.Point(canvasWidth / 2, cnavasHeight / 2);
-        canvasBox.zoomToPoint(scaleCenterPoint, zom);
+        canvasBox.current.zoomToPoint(scaleCenterPoint, zom);
     };
     // 获取边界
     const getBound = () => {
@@ -327,7 +330,7 @@ export default function Paint() {
             };
         }
         return { // 图片不存在则以canvas为边界
-            left: 0, top: 0, right: canvasBox.width, bottom: canvasBox.height,
+            left: 0, top: 0, right: canvasBox.current.width, bottom: canvasBox.current.height,
         };
     };
     const drawPolygon = () => {
@@ -337,7 +340,7 @@ export default function Paint() {
             strokeWidth: penWidth,
             selectable: false,
         });
-        canvasBox.add(polygon);
+        canvasBox.current.add(polygon);
     };
     // 置空pointCol
     const pointColSetNull = () => {
@@ -357,7 +360,7 @@ export default function Paint() {
             width: (Math.sqrt(3) * 2 * Math.abs(pointCol.endPoint.y - pointCol.startPoint.y)) / 3,
             selectable: false,
         });
-        addObj(canvasBox, triangle);
+        addObj(canvasBox.current, triangle);
     };
     const drawCircle = () => {
         let XPositive = pointCol.endPoint.x - pointCol.startPoint.x > 0; // 判定鼠标移动方向
@@ -371,7 +374,7 @@ export default function Paint() {
             radius: Math.abs(pointCol.endPoint.x - pointCol.startPoint.x) / 2,
             selectable: false,
         });
-        addObj(canvasBox, circle);
+        addObj(canvasBox.current, circle);
     };
     const drawRect = () => {
         let XPositive = pointCol.endPoint.x - pointCol.startPoint.x > 0; // 判定鼠标移动方向
@@ -386,7 +389,7 @@ export default function Paint() {
             strokeWidth: penWidth,
             selectable: false,
         });
-        addObj(canvasBox, rect);
+        addObj(canvasBox.current, rect);
     };
     const drawLine = () => {
         const line = new fabric.Line([pointCol.startPoint.x, pointCol.startPoint.y, pointCol.endPoint.x, pointCol.endPoint.y], {
@@ -397,7 +400,7 @@ export default function Paint() {
         if (operationMode === 'polygon') {
             polLineArray.push(line); // 保存多边形的临时线段
         }
-        addObj(canvasBox, line);
+        addObj(canvasBox.current, line);
     };
     const drawText = () => {
         textBox = new fabric.Textbox('', {
@@ -408,7 +411,7 @@ export default function Paint() {
             strokeWidth: penWidth,
             selectable: false,
         });
-        canvasBox.add(textBox);
+        canvasBox.current.add(textBox);
         textBox.enterEditing();
     };
     // 判断某点是否在范围内point:{x,y}  相对于canvas的点
@@ -425,7 +428,7 @@ export default function Paint() {
         return true;
     };
     const canvasAddEvent = () => {
-        canvasBox.on('mouse:down', (option) => {
+        canvasBox.current.on('mouse:down', (option) => {
             // 判断绘制是否超出范围
             startInBound = pointIsInnerBound(option.pointer);
             if (!isDrawing) {
@@ -441,7 +444,7 @@ export default function Paint() {
                     radius: 5,
                     selectable: false,
                     });
-                    canvasBox.add(polStartCircle); 
+                    canvasBox.current.add(polStartCircle); 
                 }
             }
             isDrawing = true;
@@ -450,10 +453,10 @@ export default function Paint() {
             if (operationMode === 'text') drawText();
 
             if (operationMode === 'eraser') {
-                let objList = canvasBox.getObjects();
+                let objList = canvasBox.current.getObjects();
                 objList.forEach((item) => {
                     if (Object.getPrototypeOf(item).type !== 'image' && option.target === item) {
-                        canvasBox.remove(item);
+                        canvasBox.current.remove(item);
                         serializationCanvas();
                     }
                 });
@@ -465,14 +468,14 @@ export default function Paint() {
             // }
         });
 
-        canvasBox.on('mouse:move', (option) => {
+        canvasBox.current.on('mouse:move', (option) => {
             // 移动图片
             // if (operationMode === 'move' && isMoving) { // 移动图片
             //     let point = {
             //       x: (option.pointer.x - pointCol.startPoint.x) / 5,
             //       y: (option.pointer.y - pointCol.startPoint.y) / 5,
             //     };
-            //     canvasBox.relativePan(point);
+            //     canvasBox.current.relativePan(point);
             //     pointCol.startPoint = option.pointer;
             // }
             if (!isDrawing) return;
@@ -507,7 +510,7 @@ export default function Paint() {
             }
         });
 
-        canvasBox.on('mouse:up', (option) => {
+        canvasBox.current.on('mouse:up', (option) => {
             isDrawing = false;
             pointCol.endPoint = option.absolutePointer;
             drawingObj = null;
@@ -515,7 +518,7 @@ export default function Paint() {
 
             // 自由绘画模式中，每次落笔绘画对象不可选中
             if (operationMode === 'freeDraw') {
-                canvasBox.getObjects()[canvasBox.getObjects().length - 1].selectable = false;
+                canvasBox.current.getObjects()[canvasBox.current.getObjects().length - 1].selectable = false;
             }
             if (needSerialization.includes(operationMode)) serializationCanvas();
 
@@ -527,7 +530,7 @@ export default function Paint() {
                 if (polPointArray.slice(-1)[0].x >= bounding.left && polPointArray.slice(-1)[0].x <= bounding.left + bounding.width && polPointArray.slice(-1)[0].y >= bounding.top && polPointArray.slice(-1)[0].y <= bounding.top + bounding.height) {
                     if (polLineArray.length <= 1) { // 如果第一个鼠标落下点在原点，则不进行绘制
                         isDrawing = false;
-                        canvasBox.remove(polStartCircle);
+                        canvasBox.current.remove(polStartCircle);
                         polStartCircle = null;
                         drawingObj = null;
                         polPointArray = [];
@@ -538,15 +541,15 @@ export default function Paint() {
                     [pointCol.endPoint] = polPointArray;
                     [pointCol.startPoint] = polPointArray.slice(-1);
                     isDrawing = false;
-                    canvasBox.remove(polStartCircle);
+                    canvasBox.current.remove(polStartCircle);
                     polStartCircle = null;
                     if (SFMode) {
                         polLineArray.forEach((item) => {
-                            canvasBox.remove(item);
+                            canvasBox.current.remove(item);
                         });
                         drawPolygon();
                     } else {
-                        canvasBox.remove(polLineArray.slice(-1)[0]);
+                        canvasBox.current.remove(polLineArray.slice(-1)[0]);
                         drawLine();
                     }
                     drawingObj = null;
@@ -564,7 +567,7 @@ export default function Paint() {
 
             //标注模式下检查是否超出范围-start
             if (['rect', 'circle', 'triangle', 'polygon'].includes(operationMode)) { // 结束后需要检查的类型
-                let obj = canvasBox.getObjects()[canvasBox.getObjects().length - 1];
+                let obj = canvasBox.current.getObjects()[canvasBox.current.getObjects().length - 1];
                 let { aCoords } = obj;
                 let bound = getBound();
                 endInBound = aCoords.tl.y >= bound.top && aCoords.br.y <= bound.bottom && aCoords.tl.x >= bound.left && aCoords.br.x <= bound.right;
@@ -574,8 +577,8 @@ export default function Paint() {
                 if (needAlert.includes(operationMode)) {
                     message.error('请勿超出标注范围！');
                     // 删除刚刚绘制的不合格标注
-                    canvasBox.remove(canvasBox.getObjects()[canvasBox.getObjects().length - 1]);
-                    if (polStartCircle) canvasBox.remove(polStartCircle);
+                    canvasBox.current.remove(canvasBox.current.getObjects()[canvasBox.current.getObjects().length - 1]);
+                    if (polStartCircle) canvasBox.current.remove(polStartCircle);
                     isDrawing = false;
                     polStartCircle = null;
                     drawingObj = null;
@@ -589,22 +592,22 @@ export default function Paint() {
             //标注模式下检查是否超出范围-end
         });
 
-        canvasBox.on('mouse:wheel', (option) => {
+        canvasBox.current.on('mouse:wheel', (option) => {
             option.e.preventDefault();
             let delta = option.e.deltaY > 0 ? -0.01 : 0.01;
-            let zoom = canvasBox.getZoom() + delta;
+            let zoom = canvasBox.current.getZoom() + delta;
             changeZoom(zoom);
         });
     };
     // 序列化canvas
     const serializationCanvas = () => {
-        canvasList.push(JSON.stringify(canvasBox.toJSON()));
+        canvasList.push(JSON.stringify(canvasBox.current.toJSON()));
     };
     // 反序列化canvas
     const deserializationCanvas = (json) => {
-        canvasBox.loadFromJSON(
+        canvasBox.current.loadFromJSON(
             JSON.parse(json),
-            canvasBox.renderAll.bind(canvasBox),
+            canvasBox.current.renderAll.bind(canvasBox.current),
             (o, object) => {
                 object.selectable = false;
                 // 如果是图片
@@ -616,11 +619,13 @@ export default function Paint() {
     }
     // 初始化canvas
     const initCanvas = () => {
-        canvasBox = new fabric.Canvas('canvas', {
+        canvasBox.current = new fabric.Canvas('canvas', {
             backgroundColor,
             width: canvasWidth,
             height: cnavasHeight,
             selection: false,
+            // fireRightClick: true, // 启用右键，button的数字为3
+            // stopContextMenu: true, // 禁止默认右键菜单
         });
         let json = {
             "version": "5.2.1",
@@ -664,8 +669,8 @@ export default function Paint() {
             "background": "#EBF5FF"
         };
         // 预渲染之前标注好的图形
-        canvasBox.loadFromJSON(json, () => {
-            canvasBox.renderAll();
+        canvasBox.current.loadFromJSON(json, () => {
+            canvasBox.current.renderAll();
         });
     };
     useEffect(() => {
@@ -673,7 +678,7 @@ export default function Paint() {
         serializationCanvas();
         canvasAddEvent();
         operationMode = 'freeDraw';
-        canvasBox.isDrawingMode = true;
+        canvasBox.current.isDrawingMode = true;
     }, []);
     return (
         <div>
