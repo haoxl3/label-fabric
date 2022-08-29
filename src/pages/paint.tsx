@@ -7,7 +7,7 @@ import styles from './style.less';
 
 export default function Paint() {
     const canvasEl = useRef(null);
-    const [SFMode, setSFMode] = useState(0);
+    const [SFMode, setSFMode] = useState(1);
     const [penWidth, setPenWidth] = useState(3);
     const [penColor, setPenColor] = useState('#f00'); // 画笔颜色
     const [menuPosition, setMenuPosition] = useState({visibility: 'hidden', left: 0, top: 0, zIndex: -100});
@@ -365,6 +365,7 @@ export default function Paint() {
             strokeWidth: penWidth,
             selectable: false,
         });
+        menuHandle({target: polygon});
         canvasBox.current.add(polygon);
     };
     // 置空pointCol
@@ -451,6 +452,25 @@ export default function Paint() {
             return false;
         }
         return true;
+    };
+    const menuHandle = (option) => {
+        activeEl.current = option.target;
+        // 显示菜单，设置右键菜单位置，获取菜单组件的宽高
+        const menu = document.getElementById('menu');
+        const menuWidth = menu.offsetWidth;
+        const menuHeight = menu.offsetHeight;
+        // 当前鼠标位置
+        let pointX = option.target.left + option.target.width;//option.pointer.x;
+        let pointY = option.target.top + option.target.height;//option.pointer.y;
+        // 计算菜单出现的位置，如果鼠标靠近画布右侧，菜单就出现在鼠标指针左侧
+        if (canvasBox.current.width - pointX <= menuWidth) {
+            pointX -= menuWidth;
+        }
+        // 如果鼠标靠近画布底部，菜单就出现在鼠标指针上方
+        if (canvasBox.current.height - pointY <= menuHeight) {
+            pointY -= menuHeight;
+        }
+        setMenuPosition({visibility: 'visible', left: `${pointX}px`, top: `${pointY}px`, zIndex: 100});
     };
     const canvasAddEvent = () => {
         canvasBox.current.on('mouse:down', (option) => {
@@ -618,24 +638,12 @@ export default function Paint() {
 
             // 获取当前元素
             if (option.target) {
-                activeEl.current = option.target;
-                // 显示菜单，设置右键菜单位置，获取菜单组件的宽高
-                const menu = document.getElementById('menu');
-                const menuWidth = menu.offsetWidth;
-                const menuHeight = menu.offsetHeight;
-                // 当前鼠标位置
-                let pointX = option.target.left + option.target.width;//option.pointer.x;
-                let pointY = option.target.top + option.target.height;//option.pointer.y;
-                // 计算菜单出现的位置，如果鼠标靠近画布右侧，菜单就出现在鼠标指针左侧
-                if (canvasBox.current.width - pointX <= menuWidth) {
-                    pointX -= menuWidth;
+                // 画多边形时每个拐点鼠标都会弹起，故要在画完后再弹出标注菜单
+                if (operationMode.current !== 'polygon') {
+                    menuHandle(option);
                 }
-                // 如果鼠标靠近画布底部，菜单就出现在鼠标指针上方
-                if (canvasBox.current.height - pointY <= menuHeight) {
-                    pointY -= menuHeight;
-                }
-                setMenuPosition({visibility: 'visible', left: `${pointX}px`, top: `${pointY}px`, zIndex: 100});
             } else {
+                // 点击画布时隐藏标注菜单
                 hiddenMenu();
             }
         });
