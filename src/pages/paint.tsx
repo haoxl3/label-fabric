@@ -18,7 +18,7 @@ export default function Paint() {
     const canvasWidth = 980;
     const cnavasHeight = 530;
     let canvasList = []; // 保存序列化的canvas，每次改变都会记录一次（放大缩小除外）
-    let operationMode; // 当前操作图形
+    const operationMode = useRef('freeDraw'); // 当前操作图形
     let startInBound = true; // 绘制起始点是否在范围内
     let moveInBound = true; // 绘制过程中是否超出范围
     let endInBound = true; // 绘制结束图形是否在范围内
@@ -160,7 +160,7 @@ export default function Paint() {
     };
     const save = () => {
         // 点击保存，保存该文本框，销毁文本框对象
-        if (operationMode === 'text') {
+        if (operationMode.current === 'text') {
             initTextbox();
             serializationCanvas();
         }
@@ -218,7 +218,7 @@ export default function Paint() {
         // 在改变操作模式前判断操作模式如果为text，序列化文本框
         if (ctl.name === 'text') serializationCanvas();
         // select模式可以让所有对象可选,这里的operationMode在代表上一次操作模式
-        if (ctl.name === 'select' || operationMode === 'select') {
+        if (ctl.name === 'select' || operationMode.current === 'select') {
             let allObj = canvasBox.current.getObjects();
             if (ctl.name === 'select') {
                 allObj.forEach((item) => {
@@ -231,8 +231,8 @@ export default function Paint() {
             }
         }
         // 改变操作模式
-        if (!['toSmall', 'toLarge', 'goBack', 'goForward', 'save', 'download'].includes(ctl.name)) operationMode = ctl.name;
-        if (operationMode === 'freeDraw') {
+        if (!['toSmall', 'toLarge', 'goBack', 'goForward', 'save', 'download'].includes(ctl.name)) operationMode.current = ctl.name;
+        if (operationMode.current === 'freeDraw') {
             canvasBox.current.isDrawingMode = true;
             canvasBox.current.freeDrawingBrush.color = penColor;
             canvasBox.current.freeDrawingBrush.width = penWidth;
@@ -278,6 +278,31 @@ export default function Paint() {
     };
     const fileSelect = () => {
 
+    };
+    const delTextHandle = () => {
+        hiddenMenu();
+    };
+    const addTextHandle = (txt: String) => {
+        const text = new fabric.Text(txt, {
+            top: activeEl.current.top + activeEl.current.height / 2,
+            left: activeEl.current.left + activeEl.current.width / 2,
+            fontSize: 14,
+            originX: "center",
+            originY: "center"
+        });
+        // 建组
+        const group = new fabric.Group([activeEl.current, text], {
+            // top: activeEl.current.top,
+            // left: activeEl.current.left,
+            // selection: false
+        });
+        canvasBox.current.remove(activeEl.current);
+        hiddenMenu();
+        addObj(canvasBox.current, group);
+    };
+    const hiddenMenu = () => {
+        setMenuPosition({visibility: 'hidden', left: 0, top: 0, zIndex: -100});
+        activeEl.current = null;
     };
     const uploadProps: UploadProps = {
         name: 'file',
@@ -397,7 +422,7 @@ export default function Paint() {
             strokeWidth: penWidth,
             selectable: false,
         });
-        if (operationMode === 'polygon') {
+        if (operationMode.current === 'polygon') {
             polLineArray.push(line); // 保存多边形的临时线段
         }
         addObj(canvasBox.current, line);
@@ -432,7 +457,7 @@ export default function Paint() {
             // 判断绘制是否超出范围
             startInBound = pointIsInnerBound(option.pointer);
             if (!isDrawing) {
-                if (operationMode === 'polygon') {
+                if (operationMode.current === 'polygon') {
                     polPointArray.push(option.absolutePointer); // 保存多边形的初始点
                     // 以起始点生成一个圆路径，当终点在该路径内时，就当作多边形闭合
                     polStartCircle = new fabric.Circle({
@@ -450,9 +475,9 @@ export default function Paint() {
             isDrawing = true;
             pointCol.startPoint = option.absolutePointer;
 
-            if (operationMode === 'text') drawText();
+            if (operationMode.current === 'text') drawText();
 
-            if (operationMode === 'eraser') {
+            if (operationMode.current === 'eraser') {
                 let objList = canvasBox.current.getObjects();
                 objList.forEach((item) => {
                     if (Object.getPrototypeOf(item).type !== 'image' && option.target === item) {
@@ -462,7 +487,7 @@ export default function Paint() {
                 });
             }
 
-            // if (operationMode === 'move') {
+            // if (operationMode.current === 'move') {
             //     isMoving = true;
             //     pointCol.startPoint = option.pointer;
             // }
@@ -470,7 +495,7 @@ export default function Paint() {
 
         canvasBox.current.on('mouse:move', (option) => {
             // 移动图片
-            // if (operationMode === 'move' && isMoving) { // 移动图片
+            // if (operationMode.current === 'move' && isMoving) { // 移动图片
             //     let point = {
             //       x: (option.pointer.x - pointCol.startPoint.x) / 5,
             //       y: (option.pointer.y - pointCol.startPoint.y) / 5,
@@ -480,7 +505,7 @@ export default function Paint() {
             // }
             if (!isDrawing) return;
             // 画笔绘制过程中判断是否超出图片范围
-            if (['line', 'freeDraw'].includes(operationMode) && moveInBound) {
+            if (['line', 'freeDraw'].includes(operationMode.current) && moveInBound) {
                 if (pointIsInnerBound(option.pointer)) {
                     moveInBound = true;
                 } else {
@@ -488,7 +513,7 @@ export default function Paint() {
                 }
             }
             pointCol.endPoint = option.absolutePointer;
-            switch (operationMode) {
+            switch (operationMode.current) {
                 case 'line':
                     drawLine();
                     break;
@@ -517,12 +542,12 @@ export default function Paint() {
             pointColSetNull();
 
             // 自由绘画模式中，每次落笔绘画对象不可选中
-            if (operationMode === 'freeDraw') {
+            if (operationMode.current === 'freeDraw') {
                 canvasBox.current.getObjects()[canvasBox.current.getObjects().length - 1].selectable = false;
             }
-            if (needSerialization.includes(operationMode)) serializationCanvas();
+            if (needSerialization.includes(operationMode.current)) serializationCanvas();
 
-            if (operationMode === 'polygon') {
+            if (operationMode.current === 'polygon') {
                 polPointArray.push(option.absolutePointer);
                 pointCol.startPoint = option.absolutePointer;
                 isDrawing = true;
@@ -560,13 +585,13 @@ export default function Paint() {
                 }
             }
 
-            // if (operationMode === 'move') {
+            // if (operationMode.current === 'move') {
             //     isMoving = false;
             //     pointCol.startPoint = {};
             // }
 
             //标注模式下检查是否超出范围-start
-            if (['rect', 'circle', 'triangle', 'polygon'].includes(operationMode)) { // 结束后需要检查的类型
+            if (['rect', 'circle', 'triangle', 'polygon'].includes(operationMode.current)) { // 结束后需要检查的类型
                 let obj = canvasBox.current.getObjects()[canvasBox.current.getObjects().length - 1];
                 let { aCoords } = obj;
                 let bound = getBound();
@@ -574,7 +599,7 @@ export default function Paint() {
             }
             if (!moveInBound || !startInBound || !endInBound) {
                 // 绘制的标注超出图形范围
-                if (needAlert.includes(operationMode)) {
+                if (needAlert.includes(operationMode.current)) {
                     message.error('请勿超出标注范围！');
                     // 删除刚刚绘制的不合格标注
                     canvasBox.current.remove(canvasBox.current.getObjects()[canvasBox.current.getObjects().length - 1]);
@@ -590,6 +615,29 @@ export default function Paint() {
                 }
             }
             //标注模式下检查是否超出范围-end
+
+            // 获取当前元素
+            if (option.target) {
+                activeEl.current = option.target;
+                // 显示菜单，设置右键菜单位置，获取菜单组件的宽高
+                const menu = document.getElementById('menu');
+                const menuWidth = menu.offsetWidth;
+                const menuHeight = menu.offsetHeight;
+                // 当前鼠标位置
+                let pointX = option.target.left + option.target.width;//option.pointer.x;
+                let pointY = option.target.top + option.target.height;//option.pointer.y;
+                // 计算菜单出现的位置，如果鼠标靠近画布右侧，菜单就出现在鼠标指针左侧
+                if (canvasBox.current.width - pointX <= menuWidth) {
+                    pointX -= menuWidth;
+                }
+                // 如果鼠标靠近画布底部，菜单就出现在鼠标指针上方
+                if (canvasBox.current.height - pointY <= menuHeight) {
+                    pointY -= menuHeight;
+                }
+                setMenuPosition({visibility: 'visible', left: `${pointX}px`, top: `${pointY}px`, zIndex: 100});
+            } else {
+                hiddenMenu();
+            }
         });
 
         canvasBox.current.on('mouse:wheel', (option) => {
@@ -677,7 +725,7 @@ export default function Paint() {
         initCanvas();
         serializationCanvas();
         canvasAddEvent();
-        operationMode = 'freeDraw';
+        // operationMode.current = 'freeDraw';
         canvasBox.current.isDrawingMode = true;
     }, []);
     return (
@@ -706,6 +754,15 @@ export default function Paint() {
                         <InputNumber min={1} max={10} defaultValue={penWidth} onChange={lineWidthHandle} />
                     </Col>
                 </Row>
+            </div>
+            <div id="menu" style={menuPosition} className={styles.menuBox}>
+                <div className={styles.textTitle}>
+                    <span>修改标签</span>
+                    <span className={styles.closeMenu} onClick={hiddenMenu}>X</span>
+                </div>
+                <div onClick={() => addTextHandle('视盘')} className={styles.menuList}>视盘</div>
+                <div onClick={() => addTextHandle('黄斑')} className={styles.menuList}>黄斑</div>
+                <div onClick={() => addTextHandle('视杯')} className={styles.menuList}>视杯</div>
             </div>
         </div>
     );
