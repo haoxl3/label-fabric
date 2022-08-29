@@ -9,6 +9,7 @@ export default function Paint() {
     const [SFMode, setSFMode] = useState(0);
     const [penWidth, setPenWidth] = useState(3);
     const [penColor, setPenColor] = useState('#f00'); // 画笔颜色
+    const isHidden = useRef(true); // 显示隐藏所画的图形
     let canvasBox;
     const backgroundColor = '#EBF5FF'; // 画布的背景颜色
     const canvasWidth = 980;
@@ -105,6 +106,10 @@ export default function Paint() {
             desc: '保存'
         },
         {
+            name: 'toggleShow',
+            desc: '显/隐'
+        },
+        {
             name: 'download',
             desc: '下载图片'
         },
@@ -168,6 +173,16 @@ export default function Paint() {
     const toJson = () => {
         const json = canvasBox.toJSON();
         console.log(json);
+    };
+    const toggleShow = () => {
+        isHidden.current = !isHidden.current;
+        const objs = canvasBox.toJSON();
+        objs.objects.map(item => {
+            item.visible = isHidden.current;
+        });
+        canvasBox.loadFromJSON(objs, () => {
+            canvasBox.renderAll();
+        });
     };
     // 将base64转为blob
     const dataURLtoBlob = (dataurl) => {
@@ -239,6 +254,9 @@ export default function Paint() {
                 break;
             case 'save':
                 save();
+                break;
+            case 'toggleShow':
+                toggleShow();
                 break;
             case 'download':
                 download();
