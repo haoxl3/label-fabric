@@ -121,6 +121,23 @@ export default function Paint() {
             desc: '下载json'
         }
     ];
+    const labels = [
+        {
+            name: '视盘',
+            color: '#7CFEF6',
+            rgba: 'rgba(124, 254, 246, .6)'
+        },
+        {
+            name: '黄斑',
+            color: '#34A2FF',
+            rgba: 'rgba(52, 162, 255, .6)'
+        },
+        {
+            name: '视杯',
+            color: '#A779FF',
+            rgba: 'rgba(167, 127, 255, .6)'
+        }
+    ];
     // 重置文本框
     const initTextbox = () => {
         // if (textBox !== null) {
@@ -282,18 +299,21 @@ export default function Paint() {
     const delTextHandle = () => {
         hiddenMenu();
     };
-    const addTextHandle = (txt: String) => {
+    const addTextHandle = (txtObj) => {
         const selected = activeEl.current.selectable;
         let children;
         if (selected) {
             children = activeEl.current.getObjects();
-            children[0].set('fill', '#f0f');
+            children[0].set({
+                fill: txtObj.rgba,
+                stroke: txtObj.color
+            });
             children[1].set({
                 fill: '#fff',
-                text: txt
+                text: txtObj.name
             });
         } else {
-            const text = new fabric.Text(txt, {
+            const text = new fabric.Text(txtObj.name, {
                 top: activeEl.current.top + activeEl.current.height / 2,
                 left: activeEl.current.left + activeEl.current.width / 2,
                 fontSize: 14,
@@ -421,8 +441,8 @@ export default function Paint() {
             top: YPositive ? pointCol.startPoint.y : pointCol.endPoint.y,
             width: Math.abs(pointCol.endPoint.x - pointCol.startPoint.x),
             height: Math.abs(pointCol.endPoint.y - pointCol.startPoint.y),
-            fill: SFMode ? penColor : 'rgba(0, 0, 0, 0.3)',
-            stroke: penColor,
+            fill: 'rgba(67, 116, 255, 0.3)',//SFMode ? penColor : 'rgba(0, 0, 0, 0.3)',
+            stroke: '#4374FF',//penColor,
             strokeWidth: penWidth,
             selectable: false,
         });
@@ -779,9 +799,7 @@ export default function Paint() {
                     <span>修改标签</span>
                     <span className={styles.closeMenu} onClick={hiddenMenu}>X</span>
                 </div>
-                <div onClick={() => addTextHandle('视盘')} className={styles.menuList}>视盘</div>
-                <div onClick={() => addTextHandle('黄斑')} className={styles.menuList}>黄斑</div>
-                <div onClick={() => addTextHandle('视杯')} className={styles.menuList}>视杯</div>
+                {labels.map(item => <div onClick={() => addTextHandle(item)} className={styles.menuList} key={item.name}>{item.name}</div>)}
             </div>
         </div>
     );
