@@ -283,20 +283,31 @@ export default function Paint() {
         hiddenMenu();
     };
     const addTextHandle = (txt: String) => {
-        const text = new fabric.Text(txt, {
-            top: activeEl.current.top + activeEl.current.height / 2,
-            left: activeEl.current.left + activeEl.current.width / 2,
-            fontSize: 14,
-            originX: "center",
-            originY: "center"
-        });
-        // 建组
-        const group = new fabric.Group([activeEl.current, text], {
-            // top: activeEl.current.top,
-            // left: activeEl.current.left,
-            // selection: false
-        });
+        const selected = activeEl.current.selectable;
+        let children;
+        if (selected) {
+            children = activeEl.current.getObjects();
+            children[0].set('fill', '#f0f');
+            children[1].set({
+                fill: '#fff',
+                text: txt
+            });
+        } else {
+            const text = new fabric.Text(txt, {
+                top: activeEl.current.top + activeEl.current.height / 2,
+                left: activeEl.current.left + activeEl.current.width / 2,
+                fontSize: 14,
+                originX: "center",
+                originY: "center"
+            });
+            children = [activeEl.current, text];
+        }
         canvasBox.current.remove(activeEl.current);
+        // 建组
+        const group = new fabric.Group(children, {
+            top: activeEl.current.top,
+            left: activeEl.current.left
+        });
         hiddenMenu();
         addObj(canvasBox.current, group);
     };
