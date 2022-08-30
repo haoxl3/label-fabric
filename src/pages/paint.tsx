@@ -317,8 +317,13 @@ export default function Paint() {
                 top: activeEl.current.top + activeEl.current.height / 2,
                 left: activeEl.current.left + activeEl.current.width / 2,
                 fontSize: 14,
+                color: '#fff',
                 originX: "center",
                 originY: "center"
+            });
+            activeEl.current.set({
+                fill: txtObj.rgba,
+                stroke: txtObj.color
             });
             children = [activeEl.current, text];
         }
@@ -361,6 +366,10 @@ export default function Paint() {
     const getImg = () => {
         let objList = canvasBox.current.getObjects();
         return objList.filter((item) => Object.getPrototypeOf(item).type === 'image')[0];
+    };
+    const delLabelHandle = () => {
+        canvasBox.current.remove(activeEl.current);
+        hiddenMenu();
     };
     // 改变canvas尺寸
     const changeZoom = (zoom) => {
@@ -790,7 +799,7 @@ export default function Paint() {
                         <Space>
                             {drawList.map(item => <Button size="small" onClick={() => operation(item)} key={item.name}>{item.desc}</Button>)}
                         </Space>
-                        <InputNumber min={1} max={10} defaultValue={penWidth} onChange={lineWidthHandle} />
+                        <InputNumber min={1} max={30} defaultValue={penWidth} onChange={lineWidthHandle} />
                     </Col>
                 </Row>
             </div>
@@ -800,6 +809,7 @@ export default function Paint() {
                     <span className={styles.closeMenu} onClick={hiddenMenu}>X</span>
                 </div>
                 {labels.map(item => <div onClick={() => addTextHandle(item)} className={styles.menuList} key={item.name}>{item.name}</div>)}
+                <div className={styles.delBtn}><Button size="small" onClick={delLabelHandle}>删除标注框</Button></div>
             </div>
         </div>
     );
