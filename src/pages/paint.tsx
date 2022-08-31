@@ -604,6 +604,7 @@ export default function Paint() {
             // 自由绘画模式中，每次落笔绘画对象不可选中
             if (operationMode.current === 'freeDraw') {
                 canvasBox.current.getObjects()[canvasBox.current.getObjects().length - 1].selectable = false;
+                option.target = canvasBox.current.getObjects()[canvasBox.current.getObjects().length - 1];
             }
             if (needSerialization.includes(operationMode.current)) serializationCanvas();
 
