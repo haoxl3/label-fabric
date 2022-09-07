@@ -17,7 +17,7 @@ export default function Paint() {
     const backgroundColor = '#EBF5FF'; // 画布的背景颜色
     const canvasWidth = 980;
     const cnavasHeight = 530;
-    let canvasList = []; // 保存序列化的canvas，每次改变都会记录一次（放大缩小除外）
+    const canvasList = useRef([]); // 保存序列化的canvas，每次改变都会记录一次（放大缩小除外）
     const operationMode = useRef('freeDraw'); // 当前操作图形
     let startInBound = true; // 绘制起始点是否在范围内
     let moveInBound = true; // 绘制过程中是否超出范围
@@ -157,13 +157,13 @@ export default function Paint() {
     // 回退
     const goBack = () => {
         // 标注模式下，回撤到图片初始状态时提示
-        if (-(goBackTag - 1) === canvasList.length) {
+        if (-(goBackTag - 1) === canvasList.current.length) {
             message.warning('已经是第一个记录！');
             return;
         }
         goBackTag--;
 
-        deserializationCanvas(canvasList.slice(goBackTag, goBackTag + 1)[0]);
+        deserializationCanvas(canvasList.current.slice(goBackTag, goBackTag + 1)[0]);
     };
     // 前进
     const goForward = () => {
@@ -173,7 +173,7 @@ export default function Paint() {
         }
         goBackTag++;
 
-        goBackTag === -1 ? deserializationCanvas(canvasList.slice(goBackTag)[0]) : deserializationCanvas(canvasList.slice(goBackTag, goBackTag + 1)[0]);
+        goBackTag === -1 ? deserializationCanvas(canvasList.current.slice(goBackTag)[0]) : deserializationCanvas(canvasList.current.slice(goBackTag, goBackTag + 1)[0]);
     };
     const save = () => {
         // 点击保存，保存该文本框，销毁文本框对象
@@ -181,8 +181,8 @@ export default function Paint() {
             initTextbox();
             serializationCanvas();
         }
-        saveList.push(goBackTag === -1 ? canvasList.slice(goBackTag)[0] : canvasList.slice(goBackTag, goBackTag + 1)[0]);
-        canvasList = [...saveList];
+        saveList.push(goBackTag === -1 ? canvasList.current.slice(goBackTag)[0] : canvasList.current.slice(goBackTag, goBackTag + 1)[0]);
+        canvasList.current = [...saveList];
         imgList.forEach((item, index) => {
             if (index === selectedImgIndex) {
                 item.list = [...saveList];
@@ -698,7 +698,7 @@ export default function Paint() {
     };
     // 序列化canvas
     const serializationCanvas = () => {
-        canvasList.push(JSON.stringify(canvasBox.current.toJSON()));
+        canvasList.current.push(JSON.stringify(canvasBox.current.toJSON()));
     };
     // 反序列化canvas
     const deserializationCanvas = (json) => {

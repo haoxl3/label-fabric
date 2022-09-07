@@ -106,7 +106,6 @@ export default function Home() {
     };
     // 开始绘制时，指定绘画种类
     const drawTypeChange = e => {
-        debugger
         setDrawType(e);
         canvas.skipTargetFind = !!e;
         if (e === 'pen') {
